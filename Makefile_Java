@@ -71,7 +71,6 @@ endif
 
 check-syntax:
 	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER)
-	# rm -rf ~/.emacs.d/.tmp/flymake/
 
 run:
 	make
