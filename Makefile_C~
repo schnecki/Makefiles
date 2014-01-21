@@ -1,0 +1,114 @@
+#				  #####################################################				 	#
+#				  #	     	 		   MAKEFILE					   	  #					#
+#				  #													  #					#
+#				  #			  by Manuel Schneckenreither 			  #					#
+#				  #	   manuel.schneckenreither@student.uibk.ac.at     #					#
+#				  #			   (University of Innsbruck)  			  #					#
+#				  #						2012			 			  #					#
+######################################################					#
+#																						#
+#																						#	
+# USAGE: 																				#
+#																						#
+# 1. Put in root directory of your project, all sub-directories							#
+#    including the directory where the makefile is stored in							#
+#    will be checked for any .c / .cpp files. 											#
+#																						#
+# 2. Set desired Configuration (see below)												#
+# 																						#
+# 3. Use with:																			#
+#       make clean 					to clean the target.								#
+#		make 						to create the taget.								#
+#		make CC="gcc -D DEBUG" 		to use gcc compile (default anyways)				#
+#									and define a variable DEBUG in the 					#
+#									preprocessor execution.								#
+#																						#				
+#																						#
+#########################################################################################
+#########################################################################################
+# CONFIGURATION
+
+# OCL_ROOT=/opt/AMDAPP/
+
+# Main configuration
+# ------------------
+CC=gcc
+CFLAGS=-I$(OCL_ROOT)include -g -std=c99 -Wall -Werror 
+LDFLAGS= -lm -fopenmp
+#LDFLAGS = -L$(OCL_ROOT)lib/x86_64/ -lOpenCL -lm -fopenmp  # YOU MIGHT NEED TO CHANGE THE PATH!
+
+
+# Name of Object Folder
+# use "" (quotes needed!) for present direcotry or any or desired folder, like "obj"
+# ----------------------------------------------------------------------------------
+OBJ_FOLDER  = ""
+
+
+# Name of the executeable 
+# -----------------------
+TARGET = executeable
+
+
+# END OF CONFIGURATION
+#########################################################################################
+#########################################################################################
+
+
+# Find source files in all sub directories
+SRCS     = $(shell find -name "*.cpp")
+SRCS    += $(shell find -name "*.c")
+
+# INCL = $(shell find /usr/include/ -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp")
+
+# Find header files in all sub directories
+HEADERS  = $(shell find -name "*.hpp")
+HEADERS += $(shell find -name "*.h")
+
+# Generate the list of object files 
+OBJS_2 = $(SRCS:%.cpp=%.o) # temporary .o files
+ifneq ($(OBJ_FOLDER), "")
+	OBJS = $(addprefix $(OBJ_FOLDER)/,$(notdir $(OBJS_2:%.c=%.o)))  # final .o files
+else
+	OBJS = $(notdir $(OBJS_2:%.c=%.o))  # final .o files
+endif
+
+
+# Main target
+all: $(TARGET) tags
+
+# Create .o files
+$(OBJS): $(SRCS)
+ifneq ($(OBJ_FOLDER), "")
+	mkdir $(OBJ_FOLDER) -p
+	cd $(OBJ_FOLDER); \
+	$(CC) $(addprefix ../,$^) -c $(CFLAGS) ; \
+	cd ..
+else
+	$(CC) $^ -c $(CFLAGS) ; 
+endif
+
+# Compile the main
+$(TARGET): $(OBJS)
+	$(CC) $^ $(LDFLAGS) -o $@
+
+# PHONY calls
+.PHONY: clean check-syntax tags
+
+# clean
+clean:
+ifneq ($(OBJ_FOLDER), "")
+	rm -rf $(OBJ_FOLDER)
+endif
+	rm -f $(TARGET)
+	rm -f *.o *.h~ *.c~ .#*.c ./include/*.o ./include/*.h~ ./include/*.c~ $(TARGET)
+
+check-syntax:
+	make clean
+	$(CC) -o null -S ${CHK_SOURCES} $(CFLAGS) -DDEBUG -pedantic -Wall -Wshadow -Wpointer-arith -Wcast-qual \
+        -fsyntax-only 
+#-Wmissing-prototypes -Wstrict-prototypes
+
+tags:
+	etags $(SRCS)
+# find -L  -name "*.c" -o -name "*.h"
+

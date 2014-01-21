@@ -1,0 +1,78 @@
+#				  #####################################################				 	#
+#				  #	     	 		   MAKEFILE					   	  #					#
+#				  #													  #					#
+#				  #			  by Manuel Schneckenreither 			  #					#
+#				  #	   manuel.schneckenreither@student.uibk.ac.at     #					#
+#				  #			   (University of Innsbruck)  			  #					#
+#				  #						2012			 			  #					#
+#				  #####################################################					#
+#																						#
+#																						#
+# USAGE: 																				#
+#																						#
+# 1. Put in root directory of your project, all sub-directories							#
+#    including the directory where the makefile is stored in							#
+#    will be checked for any .c / .cpp files. 											#
+#																						#
+# 2. Set desired Configuration (see below)												#
+# 																						#
+# 3. Use with:																			#
+#       make clean 					to clean the classes folder							#
+#		make 						to create the class files							#
+#																						#
+#																						#
+#########################################################################################
+#########################################################################################
+# CONFIGURATION
+
+# OCL_ROOT=/opt/AMDAPP/
+
+# Main configuration
+# ------------------
+CC=javac
+
+# Name of Object Folder
+# use "" (quotes needed!) for present direcotry or any or desired folder, like "obj"
+# ----------------------------------------------------------------------------------
+OBJ_FOLDER=./classes
+JAVA_SRC_FILES=./lib/**:./src/**
+JAVA_CP =-classpath $(CLASSPATH):$(OBJ_FOLDER):$(JAVA_SRC_FILES)
+JAVA_OPT=$(JAVA_CP) -d $(OBJ_FOLDER)
+
+# END OF CONFIGURATION
+#########################################################################################
+#########################################################################################
+
+
+# Find source files in all sub directories
+SRCS     = $(shell find -name "*.java")
+# SRCS    += $(shell find -name "*.jar")
+
+# Main target
+all: folder %.class
+	$(info ********** SUCCESS **********)
+	$(info RUN AS: java -cp ./classes PKG.CLASS)
+
+folder:
+	mkdir -p classes
+
+%.class: $(SRCS)
+	$(CC) $(SRCS) $(JAVA_OPT)
+
+# PHONY calls
+.PHONY: clean check-syntax run
+
+# clean
+clean:
+ifneq ($(OBJ_FOLDER), "")
+	rm -rf $(OBJ_FOLDER)/*
+endif
+
+
+check-syntax:
+	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER)
+	# rm -rf ~/.emacs.d/.tmp/flymake/
+
+run:
+	make
+	java $(JAVA_CP) Main
