@@ -1,10 +1,12 @@
+#########################################################################################
+#																						#
 #				  #####################################################				 	#
 #				  #	     	 		   MAKEFILE					   	  #					#
 #				  #													  #					#
 #				  #			  by Manuel Schneckenreither 			  #					#
 #				  #	   manuel.schneckenreither@student.uibk.ac.at     #					#
 #				  #			   (University of Innsbruck)  			  #					#
-#				  #						2012			 			  #					#
+#				  #						2014			 			  #					#
 #				  #####################################################					#
 #																						#
 #																						#
@@ -12,7 +14,7 @@
 #																						#
 # 1. Put in root directory of your project, all sub-directories							#
 #    including the directory where the makefile is stored in							#
-#    will be checked for any .c / .cpp files. 											#
+#    will be checked for any .java / .jar files. 										#
 #																						#
 # 2. Set desired Configuration (see below)												#
 # 																						#
@@ -22,45 +24,54 @@
 #																						#
 #																						#
 #########################################################################################
-#########################################################################################
-# CONFIGURATION
 
-# OCL_ROOT=/opt/AMDAPP/
+# CONFIGURATION
 
 # Main configuration
 # ------------------
 CC=javac
 
-# Name of Object Folder
-# use "" (quotes needed!) for present direcotry or any or desired folder, like "obj"
+# Folder Paths
+# Info: To reference the home folder (~), use $(shell cd ~ && pwd) !
 # ----------------------------------------------------------------------------------
-OBJ_FOLDER=./classes
-JAVA_SRC_FILES=./lib/**:./src/**
-JAVA_CP =-classpath $(CLASSPATH):$(OBJ_FOLDER):$(JAVA_SRC_FILES)
-JAVA_OPT=$(JAVA_CP) -d $(OBJ_FOLDER)
+OBJ_FOLDER        = ./classes
+SRC_FOLDER        = ./src
+LIB_FOLDER        = ./lib
+# Test folder needs to bin in source folder!
+TEST_FOLDER       = ./src/test
+EXT_LIB_FOLDER    = $(shell cd ~ && pwd)/Programmierung/Java/JUnit/*
 
 # END OF CONFIGURATION
+
 #########################################################################################
 #########################################################################################
 
+# Set Java options
+JAVA_CP =-classpath $(OBJ_FOLDER):$(SRC_FOLDER):$(LIB_FOLDER):$(EXT_LIB_FOLDER)
+JAVA_OPT=$(JAVA_CP) -d $(OBJ_FOLDER)
 
 # Find source files in all sub directories
-SRCS     = $(shell find -name "*.java")
-# SRCS    += $(shell find -name "*.jar")
+SRCS         = $(shell find -name "*.java")
+LIBS         = $(shell find $(LIB_FOLDER) -name "*.jar")
+LIBS        += $(shell find $(LIB_FOLDER) -name "*.java")
+TEST_FILES   = $(shell find $(TEST_FOLDER) -name "*.java")
+TEST_CLASSES = $(subst /,.,$(subst $(SRC_FOLDER)/,,$(subst .java,,$(TEST_FILES))))
 
 # Main target
 all: folder %.class
 	$(info ********** SUCCESS **********)
-	$(info RUN AS: java -cp ./classes PKG.CLASS)
+	$(info RUN WITH: java -cp ./classes PKG.CLASS)
 
+# Create folders
 folder:
-	mkdir -p classes
+	mkdir -p $(OBJ_FOLDER)
 
+# Compile all source files
 %.class: $(SRCS)
 	$(CC) $(SRCS) $(JAVA_OPT)
 
 # PHONY calls
-.PHONY: clean check-syntax run
+.PHONY: clean check-syntax run test
 
 # clean
 clean:
@@ -68,10 +79,15 @@ ifneq ($(OBJ_FOLDER), "")
 	rm -rf $(OBJ_FOLDER)/*
 endif
 
+# flymake
+check-syntax: folder
+	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER):$(LIB_FOLDER:$(EXT_LIB_FOLDER)
 
-check-syntax:
-	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER)
-
-run:
-	make
+# compile and run the start the main class
+run: all
 	java $(JAVA_CP) Main
+
+# run all tests in the test folder
+test: all
+	java $(JAVA_CP) org.junit.runner.JUnitCore $(TEST_CLASSES)
+
