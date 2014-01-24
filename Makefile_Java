@@ -81,7 +81,7 @@ endif
 
 # flymake
 check-syntax: folder
-	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER):$(LIB_FOLDER:$(EXT_LIB_FOLDER)
+	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER):$(LIB_FOLDER):$(EXT_LIB_FOLDER)
 
 # compile and run the start the main class
 run: all
