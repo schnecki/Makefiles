@@ -27,51 +27,120 @@
 
 # CONFIGURATION
 
-# Main configuration
+# Compiler to use
 # ------------------
 CC=javac
 
-# Folder Paths
+
+# FOLDER PATHS
 # Info: To reference the home folder (~), use $(shell cd ~ && pwd) !
-# ----------------------------------------------------------------------------------
+#
+# Give the types to search for and the corresponding folders. Multiple
+# folders and types can be given with a space between each record.
+# ------------------
+
 OBJ_FOLDER        = ./classes
-SRC_FOLDER        = ./src
-LIB_FOLDER        = ./lib
-# Test folder needs to bin in source folder!
-TEST_FOLDER       = ./src/test
-EXT_LIB_FOLDER    = $(shell cd ~ && pwd)/Programmierung/Java/JUnit/*
+
+SRC_TYPES         = .java                      # types of source file
+SRC_FOLDER        = ./src ../Common/src        # folders for source files
+
+
+LIB_TYPES         = .jar .java
+LIB_FOLDER        = ./lib ../Common/lib $(shell cd ~ && pwd)/Programmierung/Java/JUnit
+
+# Test folder needs to be in source folder!
+TEST_FOLDER       = ./src/test            # folder for test junit files (java files only)
 
 # END OF CONFIGURATION
 
 #########################################################################################
 #########################################################################################
 
-# Set Java options
-JAVA_CP =-classpath $(OBJ_FOLDER):$(SRC_FOLDER):$(LIB_FOLDER):$(EXT_LIB_FOLDER)
-JAVA_OPT=$(JAVA_CP) -d $(OBJ_FOLDER)
 
 # Find source files in all sub directories
-SRCS         = $(shell find -name "*.java")
-LIBS         = $(shell find $(LIB_FOLDER) -name "*.jar")
-LIBS        += $(shell find $(LIB_FOLDER) -name "*.java")
+SRCS         = $(shell 	for l in $(SRC_FOLDER) ; do \
+							for t in $(SRC_TYPES) ; do \
+								find $$l -name *$$t ; \
+							done; \
+						done)
+
+# File to copy from src folders (.class files excluded also)
+NON_SRCS_CMD = find  $(SRC_FOLDER) -type f
+NON_SRCS_CMD+= $(shell for t in $(SRC_TYPES) .class ; do \
+							echo ! -name \"*$$t\" ; \
+						done)
+NON_SRCS     = $(shell $(NON_SRCS_CMD))
+
+
+# Find all lib files with given type and in given location
+LIBS         = $(shell 	for f in $(LIB_FOLDER) ; do \
+							for t in $(LIB_TYPES) ; do \
+								find $$f -name *$$t ; \
+							done; \
+						done)
+
+
+# Find class with main function
+# MAIN_CLASS   = $(shell find $(OBJ_FOLDER) -type f -exec grep -l "void main" {} +)
+MAIN_CLASS   = $(shell grep -l "void main" $(SRCS))
+EXEC         = $(subst /,.,$(foreach dir,$(SRC_FOLDER), \
+							$(if $(findstring $(dir),$(MAIN_CLASS)), \
+								$(subst $(dir)/,, $(subst .java,,$(MAIN_CLASS))))))
+
+
+# find all test files
 TEST_FILES   = $(shell find $(TEST_FOLDER) -name "*.java")
-TEST_CLASSES = $(subst /,.,$(subst $(SRC_FOLDER)/,,$(subst .java,,$(TEST_FILES))))
+# TEST_CLASSES = $(subst /,.,$(subst ./$(SRC_FOLDER)/,,$(subst .java,,$(TEST_FILES))))
+# TEST_CLASSES = $(shell 	for file in $(subst .java,,$(TEST_FILES)) ; do \
+# 							$${first/Suzy/$second}
+
+# define space
+empty:=
+space:= $(empty) $(empty)
+
+
+# Set Java options
+JAVA_CP_WO_SRCS = $(subst $(space),:,$(LIBS)):$(OBJ_FOLDER)
+JAVA_CP_W_SRCS  = $(subst $(space),:,$(SRCS)):$(JAVA_CP_WO_SRCS)
+JAVA_OPT        = -classpath $(JAVA_CP_W_SRCS) -d $(OBJ_FOLDER)
+
 
 # Main target
-all: folder %.class
-	$(info ********** SUCCESS **********)
-	$(info RUN WITH: java -cp ./classes PKG.CLASS)
+all: folder copy %.class
+	$(info )
+	$(info ********** SUCCESS - RUN WITH: **********)
+	$(info )
+	$(info java  -classpath $(JAVA_CP_W_SRCS) $(EXEC))
+	$(info )
 
 # Create folders
 folder:
 	mkdir -p $(OBJ_FOLDER)
 
+
 # Compile all source files
 %.class: $(SRCS)
 	$(CC) $(SRCS) $(JAVA_OPT)
 
+
+# copy all non src type files to object folder directory
+copy: folder
+	$(foreach file, $(NON_SRCS), \
+		$(foreach dir, $(SRC_FOLDER), \
+			$(if $(findstring $(dir),$(file)), \
+				mkdir -p $(dir $(subst $(dir),$(OBJ_FOLDER),$(file))); \
+				cp $(file) $(subst $(dir),$(OBJ_FOLDER),$(file)); )))
+
+
+# ------------------------------------------------------------------------------
+
+
 # PHONY calls
 .PHONY: clean check-syntax run test
+
+
+# ------------------------------------------------------------------------------
+
 
 # clean
 clean:
@@ -81,13 +150,21 @@ endif
 
 # flymake
 check-syntax: folder
-	javac -Xlint $(CHK_SOURCES) -classpath $(OBJ_FOLDER):$(LIB_FOLDER):$(EXT_LIB_FOLDER)
+	javac -Xlint $(CHK_SOURCES) -classpath $(JAVA_CP_W_SRCS)
+
+
+# (OBJ_FOLDER):$(LIBS)
+
 
 # compile and run the start the main class
 run: all
-	java $(JAVA_CP) Main
+	java  -classpath $(JAVA_CP_W_SRCS) $(EXEC)
+
 
 # run all tests in the test folder
-test: all
-	java $(JAVA_CP) org.junit.runner.JUnitCore $(TEST_CLASSES)
-
+test:
+ifneq ($(TEST_CLASSES), $(empty))
+	java -classpath $(JAVA_CP_W_SRCS) org.junit.runner.JUnitCore $(TEST_CLASSES)
+else
+	$(info Could not find any test classes!)
+endif
