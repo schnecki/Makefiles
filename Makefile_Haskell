@@ -1,0 +1,80 @@
+#				  #####################################################				 	#
+#				  #	     	 		   MAKEFILE					   	  #					#
+#				  #													  #					#
+#				  #			  by Manuel Schneckenreither 			  #					#
+#				  #	   manuel.schneckenreither@student.uibk.ac.at     #					#
+#				  #			   (University of Innsbruck)  			  #					#
+#				  #						2014			 			  #					#
+#				  #####################################################					#
+#																						#
+#																						#
+# USAGE: 																				#
+#																						#
+# 1. Put in root directory of your project, all sub-directories							#
+#    including the directory where the makefile is stored in							#
+#    will be checked for any .hs files.	 												#
+#																						#
+# 2. Set desired Configuration (see below)												#
+# 																						#
+# 3. Use with:																			#
+#       make clean 					to clean the target.								#
+#		make 						to create the taget.								#
+#		make CC="ghc -D DEBUG" 		to use gcc compile (default anyways)				#
+#									and define a variable DEBUG in the 					#
+#									preprocessor execution.								#
+#																						#
+#																						#
+#########################################################################################
+#########################################################################################
+# CONFIGURATION
+
+# Main configuration
+# ------------------
+CC=ghc
+LDFLAGS=
+
+# Name of Object Folder
+# use "" (quotes needed!) for present direcotry or any or desired folder, like "obj"
+# ----------------------------------------------------------------------------------
+OBJ_FOLDER = dist/build/$(TARGET)
+
+
+# Name of the executeable
+# -----------------------
+TARGET = main
+
+
+# END OF CONFIGURATION
+#########################################################################################
+#########################################################################################
+
+
+# Find source files in all sub directories
+SRCS     = $(shell find src/ -name "*.hs")
+
+# Main target
+all: $(TARGET)
+	$(info ********** SUCCESS **********)
+	$(info cd into bin: cd $(OBJ_FOLDER)/ and then execute ./$(TARGET) ../../../doc/examples/quotient.trs)
+	$(info This will run the program with a example TRS.)
+	$(info Important: Make sure you have lp_solve on your classpath!)
+
+# Compile
+$(TARGET): $(SRCS)
+	mkdir -p $(OBJ_FOLDER)
+	$(CC) $^ -outputdir $(OBJ_FOLDER) $(LDFLAGS) -o $(OBJ_FOLDER)/$@
+
+# PHONY calls
+.PHONY: clean debug
+
+# clean
+clean:
+ifneq ($(OBJ_FOLDER), "")
+	rm -rf $(OBJ_FOLDER)
+endif
+	rm -f *.o *.h~ .#*.c ./include/*.o ./include/*.c~ $(OBJ_FOLDER)/$(TARGET)
+
+debug:
+	make CC="ghc -DDEBUG" LDFLAGS=" -prof -rtsopts -osuf p.o -hisuf p.hi"
+	$(info RUN DEBUG WITH: ./$(TARGET) <prog args>  +RTS -cx -H32m -S -RTS)
+

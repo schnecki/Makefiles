@@ -1,35 +1,61 @@
-#########################################################################################
-#																						#
-#				  #####################################################				 	#
-#				  #	     	 		   MAKEFILE					   	  #					#
-#				  #													  #					#
-#				  #			  by Manuel Schneckenreither 			  #					#
-#				  #	   manuel.schneckenreither@student.uibk.ac.at     #					#
-#				  #			   (University of Innsbruck)  			  #					#
-#				  #						2014			 			  #					#
-#				  #####################################################					#
-#																						#
-#																						#
-# USAGE: 																				#
-#																						#
-# 1. Put in root directory of your project, all sub-directories							#
-#    including the directory where the makefile is stored in							#
-#    will be checked for any .java / .jar files. 										#
-#																						#
-# 2. Set desired Configuration (see below)												#
-# 																						#
-# 3. Use with:																			#
-#       make clean 					to clean the classes folder							#
-#		make 						to create the class files							#
-#																						#
-#																						#
-#########################################################################################
+################################################################################
+#                                                                              #
+#             #####################################################            #
+#             #                     MAKEFILE                      #            #
+#             #                                                   #            #
+#             #            by Manuel Schneckenreither             #            #
+#             #    manuel.schneckenreither@student.uibk.ac.at     #            #
+#             #            (University of Innsbruck)              #            #
+#             #                      2014                         #            #
+#             #####################################################            #
+#                                                                              #
+#                                                                              #
+# USAGE:                                                                       #
+#                                                                              #
+# 1. Put in root directory of your project, all sub-directories                #
+#    including the directory where the makefile is stored in                   #
+#    will be checked for any .java / .jar files.                               #
+#                                                                              #
+# 2. Set desired Configuration (see below)                                     #
+#                                                                              #
+# 3. Use with:                                                                 #
+#    make clean          to clean the classes folder                           #
+#    make                to create the class files                             #
+#                                                                              #
+#                                                                              #
+################################################################################
+
+# Example Usage:
+# make                                      # Compile the program
+# make run                                  # Compile and run the program
+# make clean                                # Remove binaries (incl. folder)
+# make jar                                  # Compile and create jar file
+# make junit                                # Compile and run all tests using
+                                            # Junit (you need to have Junit in
+                                            # the LIB_FOLDER variable)
+
 
 # CONFIGURATION
 
-# Compiler to use
+# Executing
 # ------------------
-CC=javac
+
+                                            # The project name. The
+                                            # jar file will be named
+                                            # after it.
+PROJECT_NAME       = Server
+                                            # Default arguments (can
+                                            # be set by calling 'make
+                                            # run ARGS="--help"') when
+                                            # running 'run make'
+ARGS               =
+
+
+# Compiler and Java/Jar command
+# ------------------
+JAVA               = java
+CC                 = javac
+JAR                = jar
 
 
 # FOLDER PATHS
@@ -39,49 +65,132 @@ CC=javac
 # folders and types can be given with a space between each record.
 # ------------------
 
+                                            # Folder for the *.class files
 OBJ_FOLDER        = ./classes
 
-SRC_TYPES         = .java                      # types of source file
-SRC_FOLDER        = ./src ../Common/src        # folders for source files
+                                            # Folder for *.jar files
+                                            # when running 'make jar'
+ARTIFACTS_FOLDER  = ../artifacts/
+                                            # Types of source file.
+                                            # Separated by spaces.
+SRC_TYPES         = .java .jar
 
+                                            # Give the source folders
+                                            # as a list, the first
+                                            # folder is the main
+                                            # source folder (most
+                                            # times this is ./src)
+SRC_FOLDER        = ./src ../Common/src
 
+                                            # The library file types.
+                                            # Separated by spaces.
 LIB_TYPES         = .jar .java
+
+                                            # Folder for libraries
 LIB_FOLDER        = ./lib ../Common/lib $(shell cd ~ && pwd)/Programmierung/Java/JUnit
 
-# Test folder needs to be in source folder!
-TEST_FOLDER       = ./src/test            # folder for test junit files (java files only)
+                                            # Folder for test junit
+                                            # files (java files only).
+                                            # Test folder needs to be
+                                            # in source folder!
+TEST_FOLDER       = ./src/test
+
+
+# RMI (Remote Method Invokation) setup. Leave the policy file empty to
+# disable it. The RMI codebase is automatically determined by using
+# the OBJ_FOLDER folder variable. This setup is used for running the
+# program using 'make run' only! See:
+# http://docs.oracle.com/javase/tutorial/rmi/running.html for sample
+# policies. ------------------
+
+                                            # Policy file for this
+                                            # project. Leave empty to
+                                            # disable RMI.
+RMI_POLICY_FILE=file:$(subst //,/,$(shell cd ./src/resources/ && pwd)/)server.policy
+
+                                            # The code base to read
+                                            # the class files from.
+                                            # Server and client have
+                                            # to point to the same
+                                            # directory or url. A
+                                            # directory has to be
+                                            # ended with a slash (/).
+RMI_CODEBASE=file:$(subst //,/,$(shell cd ../Client/classes/ && pwd)/)
+
+                                            # Host name to use.
+                                            # example:
+                                            # mycomputer.example.com
+                                            # this might also be
+                                            # empty (=localhost)!
+RMI_HOSTNAME=
+
+                                            # Configuration for
+                                            # rmiregistry (this can
+                                            # also be done in the
+                                            # code). If so, leave the
+                                            # following variable
+                                            # empty!
+
+                                            # Flag to start
+                                            # rmiregistry (empty means
+                                            # false)
+START_RMI_PROCESS=
+                                            # port to use for
+                                            # rmiregistry (default
+                                            # 1099)
+RMI_REGISTRY_PORT=4242
+
 
 # END OF CONFIGURATION
+################################################################################
+################################################################################
+# Do not change anything from here on, unless you know what you are doing!
 
-#########################################################################################
-#########################################################################################
+
+# The first folder in the list of sources is the main source folder
+MAIN_SRC_FOLDER=$(word 1,$(SRC_FOLDER))
+
+
+# define space
+empty:=
+space:= $(empty) $(empty)
 
 
 # Find source files in all sub directories
 SRCS         = $(shell 	for l in $(SRC_FOLDER) ; do \
 							for t in $(SRC_TYPES) ; do \
-								find $$l -name *$$t ; \
+								find $$l -name "*$$t" ; \
 							done; \
 						done)
 
-# File to copy from src folders (.class files excluded also)
+
+# Files in source directories not being source files (.class files excluded also)
 NON_SRCS_CMD = find  $(SRC_FOLDER) -type f
 NON_SRCS_CMD+= $(shell for t in $(SRC_TYPES) .class ; do \
 							echo ! -name \"*$$t\" ; \
 						done)
 NON_SRCS     = $(shell $(NON_SRCS_CMD))
 
+NON_SRCS_CMD_MAIN     = find  $(MAIN_SRC_FOLDER) -type f
+NON_SRCS_CMD_MAIN    += $(shell for t in $(SRC_TYPES) .class ; do \
+																	echo ! -name \"*$$t\" ; \
+																done)
+NON_SRCS_MAIN_FOLDER = $(shell $(NON_SRCS_CMD_MAIN))
+
 
 # Find all lib files with given type and in given location
-LIBS         = $(shell 	for f in $(LIB_FOLDER) ; do \
+LIBS         = $(shell for f in $(LIB_FOLDER) ; do \
 							for t in $(LIB_TYPES) ; do \
-								find $$f -name *$$t ; \
+								find $$f -name "*$$t" ; \
 							done; \
 						done)
 
+LIBS_BASENAMES=$(shell for file in $(LIBS); do \
+									echo $$(basename $$file) ; \
+								done)
+
 
 # Find class with main function
-# MAIN_CLASS   = $(shell find $(OBJ_FOLDER) -type f -exec grep -l "void main" {} +)
 MAIN_CLASS   = $(shell grep -l "void main" $(SRCS))
 EXEC         = $(subst /,.,$(foreach dir,$(SRC_FOLDER), \
 							$(if $(findstring $(dir),$(MAIN_CLASS)), \
@@ -90,13 +199,6 @@ EXEC         = $(subst /,.,$(foreach dir,$(SRC_FOLDER), \
 
 # find all test files
 TEST_FILES   = $(shell find $(TEST_FOLDER) -name "*.java")
-# TEST_CLASSES = $(subst /,.,$(subst ./$(SRC_FOLDER)/,,$(subst .java,,$(TEST_FILES))))
-# TEST_CLASSES = $(shell 	for file in $(subst .java,,$(TEST_FILES)) ; do \
-# 							$${first/Suzy/$second}
-
-# define space
-empty:=
-space:= $(empty) $(empty)
 
 
 # Set Java options
@@ -105,12 +207,21 @@ JAVA_CP_W_SRCS  = $(subst $(space),:,$(SRCS)):$(JAVA_CP_WO_SRCS)
 JAVA_OPT        = -classpath $(JAVA_CP_W_SRCS) -d $(OBJ_FOLDER)
 
 
+# RMI variables
+RMI_REG_PROCESS=$(shell ps -ef | grep [r]miregistry)
+RMI=
+ifneq ($(RMI_POLICY_FILE), $(empty))
+	RMI:=-Djava.rmi.server.hostname=$(RMI_HOSTNAME) -Djava.security.policy=$(RMI_POLICY_FILE) \
+				-Djava.rmi.server.codebase=$(RMI_CODEBASE)
+endif
+
+
 # Main target
 all: folder copy %.class
 	$(info )
 	$(info ********** SUCCESS - RUN WITH: **********)
 	$(info )
-	$(info java  -classpath $(JAVA_CP_W_SRCS) $(EXEC))
+	$(info $(JAVA) -classpath $(JAVA_CP_W_SRCS) $(RMI) $(EXEC) $(ARGS))
 	$(info )
 
 # Create folders
@@ -120,6 +231,7 @@ folder:
 
 # Compile all source files
 %.class: $(SRCS)
+	$(info info: $(LIB_FOLDER))
 	$(CC) $(SRCS) $(JAVA_OPT)
 
 
@@ -134,37 +246,80 @@ copy: folder
 
 # ------------------------------------------------------------------------------
 
-
 # PHONY calls
-.PHONY: clean check-syntax run test
-
+.PHONY: clean check-syntax jar junit run
 
 # ------------------------------------------------------------------------------
 
 
-# clean
+# CLEAN
 clean:
 ifneq ($(OBJ_FOLDER), "")
 	rm -rf $(OBJ_FOLDER)/*
 endif
 
-# flymake
+
+# JAR: compile and save as jar.
+jar: all
+	@echo "Exclude the libs? The letter 'y' (without quotes excludes the libraries)." \
+				"Any other input includes the libraries. WARNING: If you exclude the libraries" \
+				"you need to have them available when you want to run the Java program. Furthermore," \
+				"you need to specify their paths inside of the JAR file in a file named meta-inf/manifest.mf" \
+				"to be able to execute the program."; \
+		read include_libs; \
+		if [ X$$include_libs = "Xy" ] ; \
+		then mkdir -p $(MAIN_SRC_FOLDER)/META-INF $(ARTIFACTS_FOLDER); \
+				echo -e "Main-Class: $(EXEC)\nClass-Path: $(LIBS_BASENAMES)\n" \
+						> $(MAIN_SRC_FOLDER)/META-INF/MANIFEST.MF ; \
+				cp -r $(MAIN_SRC_FOLDER)/META-INF/ $(OBJ_FOLDER)/ ; \
+				for l in $(LIBS); do \
+					cp $$l $(ARTIFACTS_FOLDER)/ ; \
+				done; \
+				$(JAR) cfMv $(ARTIFACTS_FOLDER)/$(PROJECT_NAME).jar -C $(OBJ_FOLDER) . ; \
+				echo "********************************************************************************" ; \
+				echo "Done. I copied the library files for you in the $(ARTIFACTS_FOLDER) folder." ; \
+				echo "Run with: java $(RMI) -jar $(ARTIFACTS_FOLDER)/$(PROJECT_NAME).jar" ; \
+			else tmp="" ; \
+				mkdir -p $(MAIN_SRC_FOLDER)/META-INF $(ARTIFACTS_FOLDER); \
+				for l in $(LIBS); do \
+					unzip -o -q $$l -d /tmp/$(PROJECT_NAME)/; \
+				done; \
+				rm -rf /tmp/$(PROJECT_NAME)/META-INF/ ; \
+				echo -e "Main-Class: $(EXEC)\n" > $(MAIN_SRC_FOLDER)/META-INF/MANIFEST.MF ; \
+				cp -r $(MAIN_SRC_FOLDER)/META-INF/ $(OBJ_FOLDER)/ ; \
+				$(JAR) cfMv $(ARTIFACTS_FOLDER)/$(PROJECT_NAME).jar -C /tmp/$(PROJECT_NAME) . -C $(OBJ_FOLDER) .  ; \
+				echo "********************************************************************************" ; \
+				echo "Done. All libraries are included in the jar file." ; \
+				echo "Run with: java $(RMI) -jar $(ARTIFACTS_FOLDER)/$(PROJECT_NAME).jar" ; \
+		fi; \
+
+
+# FLYMAKE: is used by editor emacs for syntax checking.
 check-syntax: folder
-	javac -Xlint $(CHK_SOURCES) -classpath $(JAVA_CP_W_SRCS)
+	$(CC) -Xlint $(CHK_SOURCES) -classpath $(JAVA_CP_W_SRCS)
 
 
-# (OBJ_FOLDER):$(LIBS)
-
-
-# compile and run the start the main class
+# RUN: compile and run the start the main class (in case RMI is
+# enabled, start the registry first).
 run: all
-	java  -classpath $(JAVA_CP_W_SRCS) $(EXEC)
+ifneq ($(RMI_POLICY_FILE), $(empty)) # check if policy file is given
+ifneq ($(START_RMI_PROCESS), $(empty))
+ifeq ($(RMI_REG_PROCESS), $(empty))  # check if rmi registy already running
+	$(info Starting RMI registry)
+	rmiregistry $(RMI_REGISTRY_PORT) &
+else
+	$(info RMI registry already running.)
+endif
+endif
+endif
+	$(info Starting program...)
+	$(JAVA)  -classpath $(JAVA_CP_W_SRCS) $(RMI) $(EXEC) $(ARGS)
 
 
-# run all tests in the test folder
-test:
+# TEST: run all tests in the test folder.
+junit: all
 ifneq ($(TEST_CLASSES), $(empty))
-	java -classpath $(JAVA_CP_W_SRCS) org.junit.runner.JUnitCore $(TEST_CLASSES)
+	$(JAVA) -classpath $(JAVA_CP_W_SRCS) $(RMI) org.junit.runner.JUnitCore $(TEST_CLASSES) $(ARGS)
 else
 	$(info Could not find any test classes!)
 endif
