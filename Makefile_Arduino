@@ -1,0 +1,9 @@
+##############################################
+############ Arduino Support #################
+##############################################
+
+export BOARD_TAG=uno
+export MONITOR_PORT=/dev/ttyACM0
+export ARDUINO_DIR=~/Programmierung/Arduino/arduino
+
+include ~/Programmierung/Arduino/Arduino-Makefile/Arduino.mk

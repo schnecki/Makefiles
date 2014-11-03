@@ -56,7 +56,7 @@ ARGS               =
 JAVA               = java
 CC                 = javac
 JAR                = jar
-
+JDB                = jdb
 
 # FOLDER PATHS
 # Info: To reference the home folder (~), use $(shell cd ~ && pwd) !
@@ -218,6 +218,10 @@ endif
 
 # Main target
 all: folder copy %.class
+	$(info )
+	$(info ********** SUCCESS - DEBUG WITH: **********)
+	$(info )
+	$(info $(JDB) -sourcepath$(JAVA_CP_W_SRCS) -classpath$(JAVA_CP_W_SRCS) $(RMI) $(EXEC) $(ARGS))
 	$(info )
 	$(info ********** SUCCESS - RUN WITH: **********)
 	$(info )
